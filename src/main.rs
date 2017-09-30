@@ -60,9 +60,13 @@ fn main() {
                     //log_file.write_all(format!("File Extension: {}\n", &upper_extension).as_bytes()).unwrap();
                     match &upper_extension[..] {
                         "JPG" => date_info = extract_exif_info(&entry),
-                        "TXT" => continue,
-                        "EXE" => continue,
-                        _ => {},
+                        "JPEG" => date_info = extract_exif_info(&entry),
+                        "TFF" => date_info = extract_exif_info(&entry),
+                        "TIFF" => date_info = extract_exif_info(&entry),
+                        "PNG" => {},
+                        "MOV" => {},
+                        "MP4" => {},
+                        _ => continue,
                     }
                     if !date_info.exif {
                         if let Ok(st) = meta.modified(){
@@ -175,7 +179,7 @@ fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
             }
         }
     }
-    let date_info = DateInfo {
+    let mut date_info = DateInfo {
         year: year as u64,
         month: month as u64,
         day: day as u64,
@@ -185,5 +189,8 @@ fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
         second: 0,
         exif: true,
     };
+    if date_info.year == 0 || date_info.month == 0 || date_info.day == 0 {
+        date_info.exif = false;
+    }
     date_info
 }
