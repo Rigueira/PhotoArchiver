@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Rigueira <silviorigueira@gmail.com>"]
 
 [dependencies]
-kamadak-exif = "0.2.3"
+kamadak-exif = "0.3.1"
