@@ -12,10 +12,6 @@ struct DateInfo {
     year: u64,
     month: u64,
     day: u64,
-    weekday: u64,
-    hour: u64,
-    minute: u64,
-    second: u64,
     exif: bool,
 }
 fn main() {
@@ -39,10 +35,6 @@ fn main() {
                         year: 0,
                         month: 0,
                         day: 0,
-                        weekday: 0,
-                        hour: 0,
-                        minute: 0,
-                        second: 0,
                         exif: false,
                     };
                     let mut upper_extension = String::new();
@@ -78,14 +70,12 @@ fn main() {
                     } else {
                         log_file.write_all(format!("EXIF Extraction: {}/{}/{}\n", date_info.day, date_info.month, date_info.year).as_bytes()).unwrap();
                     }
-                    //log_file.write_all(format!("Moving File: {}\n", entry.path().display()).as_bytes()).unwrap();
-                    //println!("Date Struct: {}-{}-{}-{}-{}-{}-{}", date_info.year, date_info.month, date_info.day, date_info.weekday, date_info.hour, date_info.minute, date_info.second);
                     &path.push(date_info.year.to_string());
                     &path.push(&months[date_info.month as usize]);
                     &path.push(date_info.day.to_string());
                     std::fs::create_dir_all(&path).unwrap();
                     &path.push(format!("{}_{}.{}", &original_file_name, processed_file_count, &lower_extension));
-                    fs::rename(&entry.path(), &path);
+                    fs::rename(&entry.path(), &path).unwrap();
                     log_file.write_all(format!("File Moved Here: {}\n", &path.display()).as_bytes()).unwrap();
                     processed_file_count = processed_file_count + 1;
                     &path.pop();
@@ -104,15 +94,18 @@ fn main() {
 fn break_time (time: u64) -> DateInfo {
     const EPOCH_YR: u64 = 1970;
     const SECS_DAY: u64 = 24 * 60 * 60;
-    let day_clock = time % SECS_DAY;
     let mut year_table = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     let mut result_year = EPOCH_YR;
     let mut result_month: u64 = 0;
     let mut result_day = time / SECS_DAY;
-    let result_weekday = (result_day + 4) % 7; //Day 0 was a thursday.
-    let result_hour = day_clock / 3600;
-    let result_minutes = (day_clock % 3600) / 60;
-    let result_seconds = day_clock % 60;
+
+    //Useful but out of scope.
+    //let result_weekday = (result_day + 4) % 7; //Day 0 was a thursday.
+    //let day_clock = time % SECS_DAY;
+    //let result_hour = day_clock / 3600;
+    //let result_minutes = (day_clock % 3600) / 60;
+    //let result_seconds = day_clock % 60;
+
     while result_day >= year_size(result_year) {
         result_day = result_day - year_size(result_year);
         result_year = result_year + 1;
@@ -128,10 +121,6 @@ fn break_time (time: u64) -> DateInfo {
         year: result_year,
         month: result_month + 1,
         day: result_day + 1,
-        weekday: result_weekday + 1,
-        hour: result_hour,
-        minute: result_minutes,
-        second: result_seconds,
         exif: false,
     };
     date_info
@@ -186,10 +175,6 @@ fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
                 year: year as u64,
                 month: month as u64,
                 day: day as u64,
-                weekday: 0,
-                hour: 0,
-                minute: 0,
-                second: 0,
                 exif: true,
             };
             if date_info.year == 0 || date_info.month == 0 || date_info.day == 0 {
@@ -202,10 +187,6 @@ fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
                 year: 0,
                 month: 0,
                 day: 0,
-                weekday: 0,
-                hour: 0,
-                minute: 0,
-                second: 0,
                 exif: false,
             };
             return date_info;
