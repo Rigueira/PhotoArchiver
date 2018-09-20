@@ -1,5 +1,5 @@
 [package]
-name = "archiver"
+name = "PhotoArchiver"
 version = "0.1.0"
 authors = ["Rigueira <silviorigueira@gmail.com>"]
 

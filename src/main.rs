@@ -1,5 +1,6 @@
+#![allow(non_snake_case)]
 extern crate exif;
-use exif::{DateTime, Value, tag};
+use exif::{DateTime, Value, Tag};
 use std::env;
 use std::io::prelude::*;
 use std::fs;
@@ -27,7 +28,7 @@ fn main() {
     let mut processed_file_count: u64 = 0;
     for entry in fs::read_dir(&path).unwrap() { // Iterate over the directory.
         if let Ok(entry) = entry {
-            if let Ok(meta) = entry.metadata() { // Read entry (file or folder) metadata.
+            if let Ok(meta) = entry.metadata() { // Read entry metadata (file or folder).
                 if meta.is_dir() {
                     log_file.write_all(format!("Skipping Directory: {}\n",entry.path().display()).as_bytes()).unwrap();
                     continue;
@@ -158,39 +159,56 @@ fn year_size (year: u64) -> u64 {
 }
 
 fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
-    let mut year = 0;
-    let mut month = 0;
-    let mut day = 0;
     let file = std::fs::File::open(&entry.path()).unwrap();
-    let reader = exif::Reader::new(&mut std::io::BufReader::new(&file)).unwrap();
-    for f in reader.fields() {
-        if f.tag.number() == 36867 {
-            if let Some(field) = reader.get_field(tag::DateTime, false) {
-                match field.value {
-                    Value::Ascii(ref vec) if !vec.is_empty() => {
-                        if let Ok(datetime) = DateTime::from_ascii(vec[0]) {
-                            year = datetime.year;
-                            month = datetime.month;
-                            day = datetime.day;
+    let reader = exif::Reader::new(&mut std::io::BufReader::new(&file)); //Returns Result Error if no EXIF data is found.
+    match reader {
+        Ok(exif) => {
+            let mut year = 0;
+            let mut month = 0;
+            let mut day = 0;
+            for f in exif.fields() {
+                if f.tag.number() == 36867 {
+                    if let Some(field) = exif.get_field(Tag::DateTime, false) {
+                        match field.value {
+                            Value::Ascii(ref vec) if !vec.is_empty() => {
+                                if let Ok(datetime) = DateTime::from_ascii(vec[0]) {
+                                    year = datetime.year;
+                                    month = datetime.month;
+                                    day = datetime.day;
+                                }
+                            },
+                            _ => {},
                         }
-                    },
-                    _ => {},
+                    }
                 }
             }
+            let mut date_info = DateInfo {
+                year: year as u64,
+                month: month as u64,
+                day: day as u64,
+                weekday: 0,
+                hour: 0,
+                minute: 0,
+                second: 0,
+                exif: true,
+            };
+            if date_info.year == 0 || date_info.month == 0 || date_info.day == 0 {
+                date_info.exif = false;
+            }
+            return date_info;
+        }
+        Err(_) => {
+            let date_info = DateInfo {
+                year: 0,
+                month: 0,
+                day: 0,
+                weekday: 0,
+                hour: 0,
+                minute: 0,
+                second: 0,
+                exif: false,
+            };
+            return date_info;
         }
     }
-    let mut date_info = DateInfo {
-        year: year as u64,
-        month: month as u64,
-        day: day as u64,
-        weekday: 0,
-        hour: 0,
-        minute: 0,
-        second: 0,
-        exif: true,
-    };
-    if date_info.year == 0 || date_info.month == 0 || date_info.day == 0 {
-        date_info.exif = false;
-    }
-    date_info
 }
