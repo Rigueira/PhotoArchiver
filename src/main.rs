@@ -5,9 +5,8 @@ use std::env;
 use std::io::prelude::*;
 use std::fs;
 use std::fs::File;
-use std::str;
 use std::time::{UNIX_EPOCH};
-const LOG_FILE_NAME:&'static str="Archiver Log.txt";
+const LOG_FILE_NAME:&'static str = "Archiver Log.txt";
 struct DateInfo {
     year: u64,
     month: u64,
@@ -16,17 +15,16 @@ struct DateInfo {
 }
 fn main() {
     let months = vec!["99 Unknown", "01 January", "02 February", "03 March", "04 April", "05 May", "06 June", "07 July", "08 August", "09 September", "10 October", "11 November", "12 December"];
-    let mut path = env::current_dir().unwrap(); // Set current directory as working directory.
-    //&path.push("Test"); //Debug.
+    let mut path = env::current_dir().unwrap(); //Set current directory as working directory.
     &path.push(LOG_FILE_NAME);
-    let mut log_file=File::create(&path).unwrap();
+    let mut log_file = File::create(&path).unwrap();
     &path.pop();
     let mut processed_file_count: u64 = 0;
-    for entry in fs::read_dir(&path).unwrap() { // Iterate over the directory.
+    for entry in fs::read_dir(&path).unwrap() { //Iterate over the directory.
         if let Ok(entry) = entry {
-            if let Ok(meta) = entry.metadata() { // Read entry metadata (file or folder).
+            if let Ok(meta) = entry.metadata() { //Read entry metadata (file or folder).
                 if meta.is_dir() {
-                    log_file.write_all(format!("Skipping Directory: {}\n",entry.path().display()).as_bytes()).unwrap();
+                    log_file.write_all(format!("Skipping Directory: {}\n", entry.path().display()).as_bytes()).unwrap();
                     continue;
                 }
                 if meta.is_file() {
@@ -49,8 +47,6 @@ fn main() {
                         let temp = String::from(file_name.to_str().unwrap());
                         &original_file_name.push_str(&temp);
                     }
-                    //log_file.write_all(format!("File Name: {}\n", &original_file_name).as_bytes()).unwrap();
-                    //log_file.write_all(format!("File Extension: {}\n", &upper_extension).as_bytes()).unwrap();
                     match &upper_extension[..] {
                         "JPG" => date_info = extract_exif_info(&entry),
                         "JPEG" => date_info = extract_exif_info(&entry),
@@ -62,7 +58,7 @@ fn main() {
                         _ => continue,
                     }
                     if !date_info.exif {
-                        if let Ok(st) = meta.modified(){
+                        if let Ok(st) = meta.modified() {
                             let seconds = st.duration_since(UNIX_EPOCH).unwrap().as_secs();
                             date_info = break_time(seconds);
                         }
@@ -149,7 +145,7 @@ fn year_size (year: u64) -> u64 {
 
 fn extract_exif_info (entry: &std::fs::DirEntry) -> DateInfo {
     let file = std::fs::File::open(&entry.path()).unwrap();
-    let reader = exif::Reader::new(&mut std::io::BufReader::new(&file)); //Returns Result Error if no EXIF data is found.
+    let reader = exif::Reader::new(&mut std::io::BufReader::new(&file));
     match reader {
         Ok(exif) => {
             let mut year = 0;
